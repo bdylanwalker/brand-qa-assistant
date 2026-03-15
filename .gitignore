@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+.env
+.envrc
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+
+# Playwright
+playwright/.local-browsers/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Infra
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+# Secrets — never commit
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+
+NOTES.md
+
+private/
