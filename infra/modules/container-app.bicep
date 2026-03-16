@@ -31,12 +31,9 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
         targetPort: 8080
         transport: 'auto'
       }
-      registries: [
-        {
-          server: containerRegistryServer
-          identity: 'system'   // Pull from ACR using managed identity
-        }
-      ]
+      // Registry configured by app pipeline on first deploy via:
+      // az containerapp registry set --server <acr>.azurecr.io --identity system
+      registries: []
       secrets: []
     }
     template: {
