@@ -55,8 +55,9 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       containers: [
         {
           name: 'brand-qa-assistant'
-          // Image is updated post-deploy via: az containerapp update --image ...
-          image: '${containerRegistryServer}/brand-qa-assistant:latest'
+          // Placeholder image for initial infra deploy. The app pipeline replaces
+          // this with the real image via: az containerapp update --image ...
+          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
           resources: {
             cpu: json('1.0')
             memory: '2Gi'
