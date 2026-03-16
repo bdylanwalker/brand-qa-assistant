@@ -85,7 +85,6 @@ module containerApp 'modules/container-app.bicep' = {
     tags: tags
     containerRegistryServer: containerRegistry.outputs.loginServer
     projectEndpoint: aiFoundry.outputs.projectEndpoint
-    keyVaultName: keyVault.outputs.name
   }
 }
 
