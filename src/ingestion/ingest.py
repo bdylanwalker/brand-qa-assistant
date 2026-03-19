@@ -45,7 +45,7 @@ def main() -> None:
         logger.info("  → file_id: %s", file_id)
 
     logger.info("Creating vector store from %d file(s) …", len(file_ids))
-    vector_store = client.agents.vector_stores.create_and_poll(
+    vector_store = client.vector_stores.create_and_poll(
         name="brand-guidelines",
         file_ids=file_ids,
     )

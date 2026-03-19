@@ -78,7 +78,7 @@ def bootstrap_agent() -> str:
 
     system_prompt = _build_system_prompt()
 
-    agent = client.agents.create(
+    agent = client.create_agent(
         model=settings.model_deployment,
         name="brand-qa-agent",
         instructions=system_prompt,

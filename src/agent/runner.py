@@ -42,10 +42,10 @@ async def run_brand_review(url: str) -> dict:
     client = get_client()
 
     # Create a fresh thread per review
-    thread = client.agents.threads.create()
+    thread = client.threads.create()
     logger.info("Created thread %s for URL: %s", thread.id, url)
 
-    client.agents.messages.create(
+    client.messages.create(
         thread_id=thread.id,
         role=MessageRole.USER,
         content=f"Please review this URL for brand compliance: {url}",
@@ -55,7 +55,7 @@ async def run_brand_review(url: str) -> dict:
     # when enable_auto_function_calls is configured on the client.
     # If the SDK version doesn't support auto function calls, we handle the loop manually.
     try:
-        run = client.agents.runs.create_and_process(
+        run = client.runs.create_and_process(
             thread_id=thread.id,
             agent_id=settings.agent_id,
         )
@@ -69,7 +69,7 @@ async def run_brand_review(url: str) -> dict:
         raise RuntimeError(f"Agent run ended with status {run.status!r}. Check Azure logs.")
 
     # Extract the last assistant message
-    messages = client.agents.messages.list(thread_id=thread.id)
+    messages = client.messages.list(thread_id=thread.id)
     assistant_messages = [m for m in messages if m.role == MessageRole.ASSISTANT]
     if not assistant_messages:
         raise RuntimeError("No assistant message found in thread after run.")
@@ -86,7 +86,7 @@ def _run_with_manual_tool_loop(client, thread_id: str):
     from azure.ai.agents.models import ToolOutput  # type: ignore
     import json as _json
 
-    run = client.agents.runs.create(thread_id=thread_id, agent_id=settings.agent_id)
+    run = client.runs.create(thread_id=thread_id, agent_id=settings.agent_id)
 
     while run.status in ("queued", "in_progress", "requires_action"):
         if run.status == "requires_action":
@@ -95,7 +95,7 @@ def _run_with_manual_tool_loop(client, thread_id: str):
                 args = _json.loads(tc.function.arguments)
                 output = dispatch_tool_call(tc.function.name, args)
                 tool_outputs.append(ToolOutput(tool_call_id=tc.id, output=output))
-            run = client.agents.runs.submit_tool_outputs_and_poll(
+            run = client.runs.submit_tool_outputs_and_poll(
                 thread_id=thread_id,
                 run_id=run.id,
                 tool_outputs=tool_outputs,
@@ -103,7 +103,7 @@ def _run_with_manual_tool_loop(client, thread_id: str):
         else:
             import time
             time.sleep(1)
-            run = client.agents.runs.get(thread_id=thread_id, run_id=run.id)
+            run = client.runs.get(thread_id=thread_id, run_id=run.id)
 
     return run
 

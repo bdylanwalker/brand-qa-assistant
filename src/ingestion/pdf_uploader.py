@@ -50,7 +50,7 @@ def upload_pdf_to_files_api(client, blob: _BlobRef) -> str:
     file_obj = io.BytesIO(pdf_bytes)
     file_obj.name = blob.name  # type: ignore[attr-defined]
 
-    uploaded = client.agents.files.upload_and_poll(
+    uploaded = client.files.upload_and_poll(
         file=file_obj,
         purpose="assistants",
     )
