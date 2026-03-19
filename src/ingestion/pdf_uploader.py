@@ -4,6 +4,7 @@ import io
 import logging
 from typing import Iterator
 
+from azure.identity import DefaultAzureCredential  # type: ignore
 from azure.storage.blob import BlobClient, BlobServiceClient, ContainerClient  # type: ignore
 
 from src.config import settings
@@ -25,7 +26,7 @@ class _BlobRef:
 
 def list_pdf_blobs() -> list[_BlobRef]:
     """Return a list of _BlobRef for every *.pdf in the brand-assets container."""
-    service_client = BlobServiceClient.from_connection_string(settings.blob_connection_string)
+    service_client = BlobServiceClient(settings.blob_account_url, credential=DefaultAzureCredential())
     container_client: ContainerClient = service_client.get_container_client(
         settings.brand_assets_container
     )

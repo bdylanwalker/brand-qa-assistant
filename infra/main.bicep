@@ -85,6 +85,8 @@ module containerApp 'modules/container-app.bicep' = {
     tags: tags
     containerRegistryServer: containerRegistry.outputs.loginServer
     projectEndpoint: aiFoundry.outputs.projectEndpoint
+    blobAccountUrl: storage.outputs.primaryEndpoint
+    storageAccountResourceId: storage.outputs.resourceId
   }
 }
 

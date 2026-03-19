@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     vector_store_id: str = ""
 
     # Azure Blob Storage (source for brand PDFs)
-    blob_connection_string: str
+    blob_account_url: str
     brand_assets_container: str = "brand-assets"
 
     class Config:

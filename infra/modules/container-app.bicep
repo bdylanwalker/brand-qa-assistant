@@ -4,6 +4,8 @@ param location string
 param tags object
 param containerRegistryServer string
 param projectEndpoint string
+param blobAccountUrl string
+param storageAccountResourceId string
 
 // Container App Environment (managed)
 resource appEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
@@ -53,6 +55,10 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               value: projectEndpoint
             }
             {
+              name: 'BLOB_ACCOUNT_URL'
+              value: blobAccountUrl
+            }
+            {
               name: 'MODEL_DEPLOYMENT'
               value: 'gpt-4o-mini'
             }
@@ -94,6 +100,20 @@ resource acrPullRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
     roleDefinitionId: subscriptionResourceId(
       'Microsoft.Authorization/roleDefinitions',
       '7f951dda-4ed3-4680-a7ca-43fe172d538d' // AcrPull
+    )
+    principalId: containerApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Grant Storage Blob Data Reader role to the Container App managed identity
+resource blobReaderRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(containerApp.id, storageAccountResourceId, 'blob-data-reader')
+  scope: resourceGroup()
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1' // Storage Blob Data Reader
     )
     principalId: containerApp.identity.principalId
     principalType: 'ServicePrincipal'
