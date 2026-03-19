@@ -70,5 +70,5 @@ resource gpt4oMiniDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
 
 output hubName string = aiHub.name
 output projectName string = aiProject.name
-output projectEndpoint string = 'https://${aiServices.properties.endpoint}'
+output projectEndpoint string = 'https://${hubName}.services.ai.azure.com/api/projects/${projectName}'
 output aiServicesName string = aiServices.name
