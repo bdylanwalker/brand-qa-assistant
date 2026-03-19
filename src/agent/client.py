@@ -20,7 +20,7 @@ from azure.ai.agents.models import (  # type: ignore
 )
 from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
 
-from src.agent.prompts import SYSTEM_PROMPT_TEMPLATE
+from src.agent.prompts import BRAND_GUIDELINES_SECTION, SYSTEM_PROMPT_TEMPLATE
 from src.agent.tools import CAPTURE_PAGE_TOOL_DEFINITION
 from src.config import settings
 
@@ -54,8 +54,9 @@ def get_client() -> AgentsClient:
 
 
 def _build_system_prompt() -> str:
-    brand_text = BRAND_INSTRUCTIONS_PATH.read_text(encoding="utf-8")
-    return SYSTEM_PROMPT_TEMPLATE.format(brand_instructions=brand_text)
+    brand_text = BRAND_INSTRUCTIONS_PATH.read_text(encoding="utf-8").strip()
+    guidelines = BRAND_GUIDELINES_SECTION.format(brand_instructions=brand_text) if brand_text else ""
+    return SYSTEM_PROMPT_TEMPLATE + guidelines
 
 
 def bootstrap_agent() -> str:

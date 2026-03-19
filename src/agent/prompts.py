@@ -58,6 +58,9 @@ guidelines and return a structured JSON report.
 - `warn`: score 50-79, or any major findings
 - `fail`: score < 50, or any critical findings
 
+"""
+
+BRAND_GUIDELINES_SECTION = """
 ---
 
 ## Brand Guidelines
