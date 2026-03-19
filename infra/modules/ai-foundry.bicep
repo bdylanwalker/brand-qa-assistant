@@ -51,6 +51,23 @@ resource aiServices 'Microsoft.CognitiveServices/accounts@2024-04-01-preview' = 
   }
 }
 
+// Connect the Hub to the AI Services account so the project endpoint is
+// registered at https://<subdomain>.services.ai.azure.com/api/projects/<project>
+resource aiServicesConnection 'Microsoft.MachineLearningServices/workspaces/connections@2024-04-01' = {
+  parent: aiHub
+  name: 'aiservices-connection'
+  properties: {
+    category: 'AIServices'
+    target: aiServices.properties.endpoint
+    authType: 'AAD'
+    isSharedToAll: true
+    metadata: {
+      ApiType: 'Azure'
+      ResourceId: aiServices.id
+    }
+  }
+}
+
 // gpt-4o-mini deployment
 resource gpt4oMiniDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-04-01-preview' = {
   parent: aiServices
