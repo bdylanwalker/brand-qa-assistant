@@ -6,6 +6,7 @@ param containerRegistryServer string
 param projectEndpoint string
 param blobAccountUrl string
 param storageAccountResourceId string
+param keyVaultName string
 
 // Container App Environment (managed)
 resource appEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
@@ -36,7 +37,18 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       // Registry configured by app pipeline on first deploy via:
       // az containerapp registry set --server <acr>.azurecr.io --identity system
       registries: []
-      secrets: []
+      secrets: [
+        {
+          name: 'vector-store-id'
+          keyVaultUrl: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets/vector-store-id'
+          identity: 'system'
+        }
+        {
+          name: 'agent-id'
+          keyVaultUrl: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets/agent-id'
+          identity: 'system'
+        }
+      ]
     }
     template: {
       containers: [
@@ -63,14 +75,12 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               value: 'gpt-4o-mini'
             }
             {
-              // Set via Key Vault after bootstrap: az containerapp secret set ...
               name: 'VECTOR_STORE_ID'
-              value: ''
+              secretRef: 'vector-store-id'
             }
             {
-              // Set via Key Vault after bootstrap: az containerapp secret set ...
               name: 'AGENT_ID'
-              value: ''
+              secretRef: 'agent-id'
             }
           ]
         }

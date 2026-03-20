@@ -87,6 +87,7 @@ module containerApp 'modules/container-app.bicep' = {
     projectEndpoint: aiFoundry.outputs.projectEndpoint
     blobAccountUrl: storage.outputs.primaryEndpoint
     storageAccountResourceId: storage.outputs.resourceId
+    keyVaultName: keyVault.outputs.name
   }
 }
 

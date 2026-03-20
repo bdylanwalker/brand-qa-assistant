@@ -21,22 +21,8 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   }
 }
 
-// Placeholder secrets — updated after ingestion / bootstrap
-resource vectorStoreSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'vector-store-id'
-  properties: {
-    value: 'PLACEHOLDER'
-  }
-}
-
-resource agentIdSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'agent-id'
-  properties: {
-    value: 'PLACEHOLDER'
-  }
-}
+// Secrets (vector-store-id, agent-id) are set manually after bootstrap —
+// not managed by Bicep to avoid overwriting real values on infra redeploy.
 
 // Grant the Container App's managed identity Secrets User access
 resource kvSecretsUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(containerAppPrincipalId)) {
