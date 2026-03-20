@@ -12,6 +12,9 @@ resource aiServices 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = 
   sku: {
     name: 'S0'
   }
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     customSubDomainName: hubName
     publicNetworkAccess: 'Enabled'
