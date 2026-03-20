@@ -66,7 +66,11 @@ async def run_brand_review(url: str) -> dict:
     logger.info("Run %s completed with status: %s", run.id, run.status)
 
     if run.status != "completed":
-        raise RuntimeError(f"Agent run ended with status {run.status!r}. Check Azure logs.")
+        last_error = getattr(run, "last_error", None)
+        raise RuntimeError(
+            f"Agent run ended with status {run.status!r}. "
+            f"last_error: {last_error}"
+        )
 
     # Extract the last assistant message
     messages = client.messages.list(thread_id=thread.id)
