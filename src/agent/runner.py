@@ -5,20 +5,44 @@ run_brand_review(url) → dict
   tool-call handling), extracts the JSON result from the final message.
 """
 
+import asyncio
+import concurrent.futures
 import json
 import logging
 import re
 
-from azure.ai.agents.models import MessageRole  # type: ignore  # AGENT not ASSISTANT in 1.x
+from azure.ai.agents.models import FunctionTool, MessageRole, ToolSet  # type: ignore
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.agent.client import get_client
-from src.agent.tools import dispatch_tool_call
 from src.config import settings
 
 logger = logging.getLogger(__name__)
 
 _JSON_RE = re.compile(r"\{.*\}", re.DOTALL)
+
+
+def _make_toolset() -> ToolSet:
+    """Build a runtime ToolSet for create_and_process to dispatch capture_page_for_review.
+
+    capture_page_for_review is async (Playwright). We're called from inside
+    aiohttp's event loop, so asyncio.run() would fail in the current thread.
+    Running it in a ThreadPoolExecutor gives it a fresh thread with no event
+    loop, where asyncio.run() works correctly.
+    """
+    from src.agent.tools import capture_page_for_review as _async_capture
+
+    def capture_page_for_review(url: str) -> str:  # name must match tool name on agent
+        def _run_in_thread():
+            return asyncio.run(_async_capture(url=url))
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            result = pool.submit(_run_in_thread).result()
+        return json.dumps(result)
+
+    toolset = ToolSet()
+    toolset.add(FunctionTool(functions={capture_page_for_review}))
+    return toolset
 
 
 @retry(
@@ -51,17 +75,18 @@ async def run_brand_review(url: str) -> dict:
         content=f"Please review this URL for brand compliance: {url}",
     )
 
-    # create_and_process handles the requires_action (tool call) loop automatically
-    # when enable_auto_function_calls is configured on the client.
-    # If the SDK version doesn't support auto function calls, we handle the loop manually.
+    # create_and_process handles the requires_action (tool call) loop automatically.
+    # We pass a toolset so the SDK can dispatch capture_page_for_review.
+    # Falls back to a manual async loop if the SDK version predates create_and_process.
     try:
         run = client.runs.create_and_process(
             thread_id=thread.id,
             agent_id=settings.agent_id,
+            toolset=_make_toolset(),
         )
     except AttributeError:
         # Older SDK: manual tool-call loop
-        run = _run_with_manual_tool_loop(client, thread.id)
+        run = await _run_with_manual_tool_loop(client, thread.id)
 
     logger.info("Run %s completed with status: %s", run.id, run.status)
 
@@ -72,23 +97,24 @@ async def run_brand_review(url: str) -> dict:
             f"last_error: {last_error}"
         )
 
-    # Extract the last assistant message
-    messages = client.messages.list(thread_id=thread.id)
+    # Extract the last agent message
     # azure-ai-agents 1.x uses MessageRole.AGENT (renamed from ASSISTANT)
-    assistant_messages = [m for m in messages if m.role == MessageRole.AGENT]
-    if not assistant_messages:
-        raise RuntimeError("No assistant message found in thread after run.")
+    messages = client.messages.list(thread_id=thread.id)
+    agent_messages = [m for m in messages if m.role == MessageRole.AGENT]
+    if not agent_messages:
+        raise RuntimeError("No agent message found in thread after run.")
 
-    last_message = assistant_messages[-1]
+    last_message = agent_messages[-1]
     raw_text = _extract_text(last_message)
     logger.debug("Raw agent output: %s", raw_text[:500])
 
     return _parse_json(raw_text, url)
 
 
-def _run_with_manual_tool_loop(client, thread_id: str):
+async def _run_with_manual_tool_loop(client, thread_id: str):
     """Fallback: manual requires_action loop for older SDK versions."""
     from azure.ai.agents.models import ToolOutput  # type: ignore
+    from src.agent.tools import capture_page_for_review as _async_capture
     import json as _json
 
     run = client.runs.create(thread_id=thread_id, agent_id=settings.agent_id)
@@ -98,7 +124,11 @@ def _run_with_manual_tool_loop(client, thread_id: str):
             tool_outputs = []
             for tc in run.required_action.submit_tool_outputs.tool_calls:
                 args = _json.loads(tc.function.arguments)
-                output = dispatch_tool_call(tc.function.name, args)
+                if tc.function.name == "capture_page_for_review":
+                    result = await _async_capture(**args)
+                    output = _json.dumps(result)
+                else:
+                    output = _json.dumps({"error": f"Unknown tool: {tc.function.name}"})
                 tool_outputs.append(ToolOutput(tool_call_id=tc.id, output=output))
             run = client.runs.submit_tool_outputs_and_poll(
                 thread_id=thread_id,
@@ -106,8 +136,7 @@ def _run_with_manual_tool_loop(client, thread_id: str):
                 tool_outputs=tool_outputs,
             )
         else:
-            import time
-            time.sleep(1)
+            await asyncio.sleep(1)
             run = client.runs.get(thread_id=thread_id, run_id=run.id)
 
     return run
