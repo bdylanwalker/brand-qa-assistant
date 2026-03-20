@@ -15,7 +15,8 @@ from pathlib import Path
 from azure.ai.agents import AgentsClient  # type: ignore
 from azure.ai.agents.models import (  # type: ignore
     FileSearchTool,
-    FunctionTool,
+    FunctionDefinition,
+    FunctionToolDefinition,
     ToolSet,
 )
 from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
@@ -72,9 +73,16 @@ def bootstrap_agent() -> str:
             "VECTOR_STORE_ID is not set. Run `python -m src.ingestion.ingest` first."
         )
 
+    capture_tool = FunctionToolDefinition(
+        function=FunctionDefinition(
+            name=CAPTURE_PAGE_TOOL_DEFINITION["name"],
+            description=CAPTURE_PAGE_TOOL_DEFINITION["description"],
+            parameters=CAPTURE_PAGE_TOOL_DEFINITION["parameters"],
+        )
+    )
+
     toolset = ToolSet()
     toolset.add(FileSearchTool(vector_store_ids=[settings.vector_store_id]))
-    toolset.add(FunctionTool(definitions=[CAPTURE_PAGE_TOOL_DEFINITION]))
 
     system_prompt = _build_system_prompt()
 
@@ -82,7 +90,7 @@ def bootstrap_agent() -> str:
         model=settings.model_deployment,
         name="brand-qa-agent",
         instructions=system_prompt,
-        tools=toolset.definitions,
+        tools=toolset.definitions + [capture_tool],
         tool_resources=toolset.resources,
     )
 
