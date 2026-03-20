@@ -93,8 +93,13 @@ module containerApp 'modules/container-app.bicep' = {
 // ---------------------------------------------------------------------------
 // Grant Container App identity Azure AI Developer access on AI Services
 // ---------------------------------------------------------------------------
+resource aiServicesRef 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' existing = {
+  name: '${abbrs.aiHub}-${resourceToken}-aiservices'
+}
+
 resource aiDeveloperRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(resourceGroup().id, '${abbrs.containerApp}-${resourceToken}', 'azure-ai-developer')
+  scope: aiServicesRef
   properties: {
     roleDefinitionId: subscriptionResourceId(
       'Microsoft.Authorization/roleDefinitions',
@@ -103,6 +108,7 @@ resource aiDeveloperRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = 
     principalId: containerApp.outputs.principalId
     principalType: 'ServicePrincipal'
   }
+  dependsOn: [aiFoundry]
 }
 
 // ---------------------------------------------------------------------------
