@@ -44,7 +44,7 @@ resource gpt4oMiniDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
   name: 'gpt-4o-mini'
   sku: {
     name: 'GlobalStandard'
-    capacity: 10  // TPM in thousands; adjust based on quota
+    capacity: 50  // TPM in thousands; adjust based on quota
   }
   properties: {
     model: {
