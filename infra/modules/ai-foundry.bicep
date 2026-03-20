@@ -36,7 +36,7 @@ resource aiProject 'Microsoft.CognitiveServices/accounts/projects@2025-10-01-pre
 }
 
 // gpt-4o-mini deployment
-resource gpt4oMiniDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-10-01-preview' = {
+resource gpt4oMiniDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-04-01-preview' = {
   parent: aiServices
   name: 'gpt-4o-mini'
   sku: {
