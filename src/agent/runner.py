@@ -9,7 +9,7 @@ import json
 import logging
 import re
 
-from azure.ai.agents.models import MessageRole  # type: ignore
+from azure.ai.agents.models import MessageRole  # type: ignore  # AGENT not ASSISTANT in 1.x
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.agent.client import get_client
@@ -74,7 +74,8 @@ async def run_brand_review(url: str) -> dict:
 
     # Extract the last assistant message
     messages = client.messages.list(thread_id=thread.id)
-    assistant_messages = [m for m in messages if m.role == MessageRole.ASSISTANT]
+    # azure-ai-agents 1.x uses MessageRole.AGENT (renamed from ASSISTANT)
+    assistant_messages = [m for m in messages if m.role == MessageRole.AGENT]
     if not assistant_messages:
         raise RuntimeError("No assistant message found in thread after run.")
 
