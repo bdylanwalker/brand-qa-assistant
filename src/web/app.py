@@ -38,7 +38,7 @@ async def review(request: web.Request) -> web.Response:
         result = await run_brand_review(url)
     except Exception as exc:
         logger.exception("Brand review failed for %s", url)
-        raise web.HTTPInternalServerError(reason=str(exc))
+        raise web.HTTPInternalServerError(text=str(exc))
 
     return web.json_response(result)
 

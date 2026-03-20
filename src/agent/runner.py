@@ -104,10 +104,13 @@ async def _dispatch(tool_name: str, arguments_json: str) -> str:
     if tool_name == "capture_page_for_review":
         try:
             result = await capture_page_for_review(**args)
-            return json.dumps(result)
+            # Exclude screenshot_b64: tool outputs are plain text; the model
+            # can't interpret a base64 blob as an image, and it blows the
+            # 1 MB API limit.
+            return json.dumps({"text": result.get("text", "")})
         except Exception as exc:
             logger.error("Tool %s failed: %s", tool_name, exc, exc_info=True)
-            return json.dumps({"error": str(exc), "screenshot_b64": "", "text": ""})
+            return json.dumps({"error": str(exc), "text": ""})
 
     logger.warning("Unknown tool called: %s", tool_name)
     return json.dumps({"error": f"Unknown tool: {tool_name}"})
