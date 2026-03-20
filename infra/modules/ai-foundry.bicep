@@ -3,40 +3,7 @@ param projectName string
 param location string
 param tags object
 
-// AI Foundry Hub (Azure ML Workspace in hub mode)
-resource aiHub 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
-  name: hubName
-  location: location
-  tags: tags
-  kind: 'Hub'
-  identity: {
-    type: 'SystemAssigned'
-  }
-  properties: {
-    friendlyName: hubName
-    publicNetworkAccess: 'Enabled'
-  }
-}
-
-// AI Foundry Project (child workspace)
-resource aiProject 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
-  name: projectName
-  location: location
-  tags: tags
-  kind: 'Project'
-  identity: {
-    type: 'SystemAssigned'
-  }
-  properties: {
-    friendlyName: projectName
-    hubResourceId: aiHub.id
-    publicNetworkAccess: 'Enabled'
-  }
-}
-
-// OpenAI Services account associated with the hub
-// Note: In AI Foundry, model deployments are made via the AI Services resource
-// The project endpoint is the AI Services endpoint
+// AI Services account — the backing resource for all AI Foundry APIs
 resource aiServices 'Microsoft.CognitiveServices/accounts@2024-04-01-preview' = {
   name: '${hubName}-aiservices'
   location: location
@@ -51,20 +18,23 @@ resource aiServices 'Microsoft.CognitiveServices/accounts@2024-04-01-preview' = 
   }
 }
 
-// Connect the Hub to the AI Services account so the project endpoint is
-// registered at https://<subdomain>.services.ai.azure.com/api/projects/<project>
-resource aiServicesConnection 'Microsoft.MachineLearningServices/workspaces/connections@2024-04-01' = {
-  parent: aiHub
-  name: 'aiservices-connection'
+// AI Foundry Project — native CognitiveServices sub-resource.
+// Creates the project at: https://<subdomain>.services.ai.azure.com/api/projects/<name>
+// Note: the Hub+Project Azure ML workspaces previously in this file did not register
+// a project on the services.ai.azure.com endpoint. This resource does.
+resource aiProject 'Microsoft.CognitiveServices/accounts/projects@2025-06-01' = {
+  parent: aiServices
+  name: projectName
+  location: location
+  kind: 'Project'
+  sku: {
+    name: 'S0'
+  }
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
-    category: 'AIServices'
-    target: aiServices.properties.endpoint
-    authType: 'AAD'
-    isSharedToAll: true
-    metadata: {
-      ApiType: 'Azure'
-      ResourceId: aiServices.id
-    }
+    displayName: projectName
   }
 }
 
@@ -85,7 +55,6 @@ resource gpt4oMiniDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
   }
 }
 
-output hubName string = aiHub.name
-output projectName string = aiProject.name
 output projectEndpoint string = 'https://${hubName}.services.ai.azure.com/api/projects/${projectName}'
 output aiServicesName string = aiServices.name
+output aiServicesId string = aiServices.id

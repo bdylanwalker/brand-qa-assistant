@@ -61,7 +61,7 @@ module keyVault 'modules/keyvault.bicep' = {
 }
 
 // ---------------------------------------------------------------------------
-// Azure AI Foundry (Hub + Project + gpt-4o-mini deployment)
+// Azure AI Foundry (AI Services account + Project + gpt-4o-mini deployment)
 // ---------------------------------------------------------------------------
 module aiFoundry 'modules/ai-foundry.bicep' = {
   name: 'ai-foundry'
@@ -87,6 +87,21 @@ module containerApp 'modules/container-app.bicep' = {
     projectEndpoint: aiFoundry.outputs.projectEndpoint
     blobAccountUrl: storage.outputs.primaryEndpoint
     storageAccountResourceId: storage.outputs.resourceId
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Grant Container App identity Azure AI Developer access on AI Services
+// ---------------------------------------------------------------------------
+resource aiDeveloperRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(containerApp.outputs.principalId, aiFoundry.outputs.aiServicesId, 'azure-ai-developer')
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      '64702f94-c441-49e6-a78b-ef80e0188fee' // Azure AI Developer
+    )
+    principalId: containerApp.outputs.principalId
+    principalType: 'ServicePrincipal'
   }
 }
 
