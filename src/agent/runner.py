@@ -1,3 +1,4 @@
+
 """Brand review orchestration.
 
 run_brand_review(url) → dict
@@ -83,11 +84,14 @@ async def _run_tool_loop(client, thread_id: str):
             for tc in run.required_action.submit_tool_outputs.tool_calls:
                 output = await _dispatch(tc.function.name, tc.function.arguments)
                 tool_outputs.append(ToolOutput(tool_call_id=tc.id, output=output))
-            run = client.runs.submit_tool_outputs_and_poll(
+            with client.runs.submit_tool_outputs_stream(
                 thread_id=thread_id,
                 run_id=run.id,
                 tool_outputs=tool_outputs,
-            )
+            ) as stream:
+                for _ in stream:
+                    pass
+                run = stream.get_final_run()
         else:
             await asyncio.sleep(2)
             run = client.runs.get(thread_id=thread_id, run_id=run.id)
