@@ -4,7 +4,7 @@ param location string
 param tags object
 
 // AI Services account — the backing resource for all AI Foundry APIs
-resource aiServices 'Microsoft.CognitiveServices/accounts@2024-04-01-preview' = {
+resource aiServices 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
   name: '${hubName}-aiservices'
   location: location
   tags: tags
@@ -23,7 +23,7 @@ resource aiServices 'Microsoft.CognitiveServices/accounts@2024-04-01-preview' = 
 // Creates the project at: https://<subdomain>.services.ai.azure.com/api/projects/<name>
 // Note: the Hub+Project Azure ML workspaces previously in this file did not register
 // a project on the services.ai.azure.com endpoint. This resource does.
-resource aiProject 'Microsoft.CognitiveServices/accounts/projects@2025-06-01' = {
+resource aiProject 'Microsoft.CognitiveServices/accounts/projects@2025-10-01-preview' = {
   parent: aiServices
   name: projectName
   location: location
