@@ -91,19 +91,20 @@ module containerApp 'modules/container-app.bicep' = {
 }
 
 // ---------------------------------------------------------------------------
-// Grant Container App identity Azure AI Developer access on AI Services
+// Grant Container App identity Azure AI User access on AI Services
+// (Azure AI User covers AIServices data plane incl. agents/write)
 // ---------------------------------------------------------------------------
 resource aiServicesRef 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' existing = {
   name: '${abbrs.aiHub}-${resourceToken}-aiservices'
 }
 
-resource aiDeveloperRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(aiServicesRef.id, '${abbrs.containerApp}-${resourceToken}', 'azure-ai-developer')
+resource aiUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(aiServicesRef.id, '${abbrs.containerApp}-${resourceToken}', 'azure-ai-user')
   scope: aiServicesRef
   properties: {
     roleDefinitionId: subscriptionResourceId(
       'Microsoft.Authorization/roleDefinitions',
-      '64702f94-c441-49e6-a78b-ef80e0188fee' // Azure AI Developer
+      '53ca6127-db72-4b80-b1b0-d745d6d5456d' // Azure AI User
     )
     principalId: containerApp.outputs.principalId
     principalType: 'ServicePrincipal'

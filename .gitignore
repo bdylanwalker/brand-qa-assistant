@@ -35,6 +35,6 @@ playwright/.local-browsers/
 *.pfx
 *.cer
 
-NOTES.md
+private/NOTES.md
 
 private/
