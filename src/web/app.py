@@ -7,10 +7,44 @@ Routes:
 
 import logging
 from pathlib import Path
+from urllib.parse import urlparse
 
 from aiohttp import web
 
 from src.agent.runner import run_brand_review
+
+# Only URLs on these domains (or their subdomains) may be reviewed.
+_APPROVED_DOMAINS = {
+    "mercycorps.org",
+    "mercycorps.co.uk",
+    "energy4impact.org",
+    "mercycorpsagrifin.org",
+    "mercycorpsventures.com",
+    "mercycorps.org.co",
+    "gazaskygeeks.com",
+    "mercycorps.ge",
+    "mercycorpsguatemala.com",
+    "mercycorps.or.id",
+    "mercycorps.org.lb",
+}
+
+
+def _is_approved_url(url: str) -> bool:
+    try:
+        hostname = (urlparse(url).hostname or "").lower()
+    except Exception:
+        return False
+    return any(
+        hostname == domain or hostname.endswith("." + domain)
+        for domain in _APPROVED_DOMAINS
+    )
+
+
+def _is_pdf_url(url: str) -> bool:
+    try:
+        return urlparse(url).path.lower().endswith(".pdf")
+    except Exception:
+        return False
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,9 +67,15 @@ async def review(request: web.Request) -> web.Response:
     if not url:
         raise web.HTTPBadRequest(reason="'url' field is required")
 
-    logger.info("Brand review requested for: %s", url)
+    if not _is_approved_url(url):
+        raise web.HTTPBadRequest(
+            reason="Brand QA can only review content hosted on approved domains."
+        )
+
+    is_pdf = _is_pdf_url(url)
+    logger.info("Brand review requested for: %s (pdf=%s)", url, is_pdf)
     try:
-        result = await run_brand_review(url)
+        result = await run_brand_review(url, is_pdf=is_pdf)
     except Exception as exc:
         logger.exception("Brand review failed for %s", url)
         raise web.HTTPInternalServerError(text=str(exc))

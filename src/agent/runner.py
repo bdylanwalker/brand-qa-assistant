@@ -28,7 +28,7 @@ _JSON_RE = re.compile(r"\{.*\}", re.DOTALL)
     wait=wait_exponential(multiplier=1, min=4, max=30),
     reraise=True,
 )
-async def run_brand_review(url: str) -> dict:
+async def run_brand_review(url: str, is_pdf: bool = False) -> dict:
     """Run a full brand compliance review for the given URL.
 
     Returns a dict matching the schema in src/agent/prompts.py:
@@ -46,10 +46,19 @@ async def run_brand_review(url: str) -> dict:
     thread = client.threads.create()
     logger.info("Created thread %s for URL: %s", thread.id, url)
 
+    if is_pdf:
+        content = (
+            f"Please review this PDF URL for brand compliance: {url}\n\n"
+            "Note: This is a PDF — use capture_page_for_review to extract text only. "
+            "Visual review is unavailable for PDFs; note this in your findings."
+        )
+    else:
+        content = f"Please review this URL for brand compliance: {url}"
+
     client.messages.create(
         thread_id=thread.id,
         role=MessageRole.USER,
-        content=f"Please review this URL for brand compliance: {url}",
+        content=content,
     )
 
     run = await _run_tool_loop(client, thread.id)

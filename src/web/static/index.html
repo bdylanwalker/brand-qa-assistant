@@ -17,8 +17,8 @@
       --accent-hover: #2563eb;
       --pass: #16a34a;
       --pass-bg: #dcfce7;
-      --warn: #d97706;
-      --warn-bg: #fef3c7;
+      --borderline: #d97706;
+      --borderline-bg: #fef3c7;
       --fail: #dc2626;
       --fail-bg: #fee2e2;
       --critical: #dc2626;
@@ -31,6 +31,12 @@
       --visual-bg: #ede9fe;
       --language: #0369a1;
       --language-bg: #e0f2fe;
+      --conf-high: #16a34a;
+      --conf-high-bg: #dcfce7;
+      --conf-medium: #d97706;
+      --conf-medium-bg: #fef3c7;
+      --conf-low: #64748b;
+      --conf-low-bg: #f1f5f9;
     }
 
     body {
@@ -166,9 +172,16 @@
       border: 3px solid currentColor;
     }
 
-    .score-circle.pass { color: var(--pass); background: var(--pass-bg); }
-    .score-circle.warn { color: var(--warn); background: var(--warn-bg); }
-    .score-circle.fail { color: var(--fail); background: var(--fail-bg); }
+    .score-circle.pass       { color: var(--pass);       background: var(--pass-bg); }
+    .score-circle.borderline { color: var(--borderline); background: var(--borderline-bg); }
+    .score-circle.fail       { color: var(--fail);       background: var(--fail-bg); }
+
+    .score-denom {
+      font-size: 0.6rem;
+      font-weight: 600;
+      opacity: 0.7;
+      line-height: 1;
+    }
 
     .result-meta { flex: 1; min-width: 0; }
 
@@ -183,9 +196,22 @@
       margin-bottom: 0.375rem;
     }
 
-    .overall-badge.pass { background: var(--pass-bg); color: var(--pass); }
-    .overall-badge.warn { background: var(--warn-bg); color: var(--warn); }
-    .overall-badge.fail { background: var(--fail-bg); color: var(--fail); }
+    .overall-badge.pass       { background: var(--pass-bg);       color: var(--pass); }
+    .overall-badge.borderline { background: var(--borderline-bg); color: var(--borderline); }
+    .overall-badge.fail       { background: var(--fail-bg);       color: var(--fail); }
+
+    .confidence-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 0.375rem;
+      vertical-align: middle;
+    }
+    .confidence-badge.high   { background: var(--conf-high-bg);   color: var(--conf-high); }
+    .confidence-badge.medium { background: var(--conf-medium-bg); color: var(--conf-medium); }
+    .confidence-badge.low    { background: var(--conf-low-bg);    color: var(--conf-low); }
 
     .result-url {
       font-size: 0.875rem;
@@ -299,9 +325,17 @@
     <div id="results">
       <div class="card">
         <div class="result-header">
-          <div class="score-circle" id="score-circle"></div>
+          <div class="score-circle" id="score-circle">
+            <div>
+              <span id="score-value"></span>
+              <div class="score-denom">/10</div>
+            </div>
+          </div>
           <div class="result-meta">
-            <div class="overall-badge" id="overall-badge"></div>
+            <div>
+              <span class="overall-badge" id="overall-badge"></span>
+              <span class="confidence-badge" id="confidence-badge"></span>
+            </div>
             <div class="result-url" id="result-url"></div>
           </div>
         </div>
@@ -374,16 +408,22 @@
     function renderResults(data) {
       const overall = data.overall || 'fail';
       const score = data.score ?? 0;
+      const confidence = data.confidence || 'low';
 
       // Score circle
       const circle = document.getElementById('score-circle');
-      circle.textContent = score;
       circle.className = `score-circle ${overall}`;
+      document.getElementById('score-value').textContent = score;
 
       // Overall badge
       const badge = document.getElementById('overall-badge');
       badge.textContent = overall.toUpperCase();
       badge.className = `overall-badge ${overall}`;
+
+      // Confidence badge
+      const confBadge = document.getElementById('confidence-badge');
+      confBadge.textContent = confidence.charAt(0).toUpperCase() + confidence.slice(1) + ' confidence';
+      confBadge.className = `confidence-badge ${confidence}`;
 
       // URL
       document.getElementById('result-url').textContent = data.url || '';
@@ -414,12 +454,17 @@
     function buildFinding(f) {
       const el = document.createElement('div');
       el.className = 'finding';
+      const guidelineHtml = f.guideline_source
+        ? `<div class="finding-label">Guideline</div>
+           <div class="finding-text" style="font-style:italic">${esc(f.guideline_source)}</div>`
+        : '';
       el.innerHTML = `
         <div class="finding-badges">
           <span class="badge ${f.severity}">${f.severity}</span>
           <span class="badge ${f.category}">${f.category}</span>
         </div>
         <div class="finding-rule">${esc(f.rule)}</div>
+        ${guidelineHtml}
         <div class="finding-label">Observation</div>
         <div class="finding-text">${esc(f.observation)}</div>
         <div class="finding-label">Recommendation</div>
