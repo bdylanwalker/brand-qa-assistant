@@ -38,3 +38,5 @@ playwright/.local-browsers/
 private/NOTES.md
 
 private/
+
+.claude/settings.local.json

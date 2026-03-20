@@ -49,11 +49,3 @@ async def capture_page_for_review(url: str) -> dict:
     )
     return result
 
-
-def dispatch_tool_call(tool_name: str, tool_args: dict) -> str:
-    """Synchronous dispatcher called by the agent runner's tool-handling loop."""
-    if tool_name == "capture_page_for_review":
-        result = asyncio.run(capture_page_for_review(**tool_args))
-        import json
-        return json.dumps(result)
-    raise ValueError(f"Unknown tool: {tool_name!r}")
