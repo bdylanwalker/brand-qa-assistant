@@ -98,7 +98,7 @@ resource aiServicesRef 'Microsoft.CognitiveServices/accounts@2025-10-01-preview'
 }
 
 resource aiDeveloperRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(resourceGroup().id, '${abbrs.containerApp}-${resourceToken}', 'azure-ai-developer')
+  name: guid(aiServicesRef.id, '${abbrs.containerApp}-${resourceToken}', 'azure-ai-developer')
   scope: aiServicesRef
   properties: {
     roleDefinitionId: subscriptionResourceId(
@@ -108,7 +108,6 @@ resource aiDeveloperRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = 
     principalId: containerApp.outputs.principalId
     principalType: 'ServicePrincipal'
   }
-  dependsOn: [aiFoundry]
 }
 
 // ---------------------------------------------------------------------------
