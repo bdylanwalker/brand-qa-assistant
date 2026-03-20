@@ -26,10 +26,6 @@ resource aiProject 'Microsoft.CognitiveServices/accounts/projects@2025-06-01' = 
   parent: aiServices
   name: projectName
   location: location
-  kind: 'Project'
-  sku: {
-    name: 'S0'
-  }
   identity: {
     type: 'SystemAssigned'
   }
