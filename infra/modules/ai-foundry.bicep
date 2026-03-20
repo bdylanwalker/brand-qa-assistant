@@ -15,6 +15,7 @@ resource aiServices 'Microsoft.CognitiveServices/accounts@2024-04-01-preview' = 
   properties: {
     customSubDomainName: hubName
     publicNetworkAccess: 'Enabled'
+    allowProjectManagement: true
   }
 }
 
